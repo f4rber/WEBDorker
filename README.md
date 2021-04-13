@@ -12,7 +12,7 @@ Current tool set:
 [6] SQLi checker - checks urls from DB for SQLi;
 [7] LFI checker - checks urls from DB for LFI;
 [8] Directory bruteforce (WIP) - gives you list of site directories;
-[9] Site technologies - gives you list of technologies used by the site;
+[9] Site technologies - gives you list of technologies used by the site.
 ```
 ## Screenshots:
 ![Screenshot](screen1.jpg)
