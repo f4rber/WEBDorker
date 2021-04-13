@@ -14,3 +14,11 @@ Current tool set:
 [8] Directory bruteforce (WIP) - gives you list of site directories;
 [9] Site technologies - gives you list of technologies used by the site;
 ```
+## Screenshots:
+![Screenshot](screen1.jpg)
+
+![Screenshot](screen2.jpg)
+
+![Screenshot](screen3.jpg)
+
+## Remember, development is still in progress, you may encounter bugs.
