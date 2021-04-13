@@ -1,0 +1,7 @@
+bs4
+urllib3
+ipwhois
+json2html
+flask
+sqlite3
+datetime
