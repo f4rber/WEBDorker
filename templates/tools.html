@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>Dorker - Dashboard</title>
+        <title>{{ tool }}</title>
         <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
         <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css" rel="stylesheet" crossorigin="anonymous" />
@@ -14,15 +14,9 @@
     </head>
     <body class="sb-nav-fixed">
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-            <a class="navbar-brand" href="index.html">Dorker - Dashboard</a>
+            <a class="navbar-brand" href="index.html">Web-Dorker</a>
             <!-- Navbar Search-->
             <form class="d-none d-md-inline-block form-inline ml-auto mr-0 mr-md-3 my-2 my-md-0">
-                <div class="input-group">
-                    <input class="form-control" type="text" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2" />
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" type="button"><i class="fas fa-search"></i></button>
-                    </div>
-                </div>
             </form>
         </nav>
         <div id="layoutSidenav">
@@ -33,7 +27,7 @@
                             <div class="sb-sidenav-menu-heading">Core</div>
                             <a class="nav-link" href="index.html">
                                 <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                Dashboard
+                                Tools
                             </a>
                             <div class="sb-sidenav-menu-heading">Interface</div>
                             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
@@ -45,18 +39,20 @@
                                 <nav class="sb-sidenav-menu-nested nav">
                                     <a class="nav-link" href="proxy">Proxy scraper</a>
                                     <a class="nav-link" href="subdomains">Subdomain lookup</a>
-                                    <a class="nav-link" href="reverse_ip">Reverse ip lookup</a>
+                                    <a class="nav-link" href="reverse_ip">Reverse IP lookup</a>
                                     <a class="nav-link" href="whois">Whois lookup</a>
                                     <a class="nav-link" href="dorker">Dorker</a>
                                     <a class="nav-link" href="sqli">SQLi checker</a>
                                     <a class="nav-link" href="lfi">LFI checker</a>
-                                    <a class="nav-link" href="dirbrute">Directory bruteforce</a>
+                                    <a class="nav-link" href="directory_bruteforce">Directory bruteforce</a>
                                     <a class="nav-link" href="cmsinfo">Site technologies</a>
+                                    <a class="nav-link" href="links">Links scrapper</a>
+                                    <a class="nav-link" href="specific_scan">Specific scan</a>
                                 </nav>
                             </div>
                             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="false" aria-controls="collapsePages">
                                 <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                                Pages
+                                SQL
                                 <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
                             <div class="collapse" id="collapsePages" aria-labelledby="headingTwo" data-parent="#sidenavAccordion">
@@ -68,7 +64,7 @@
                     </div>
                     <div class="sb-sidenav-footer">
                         <div class="small">Version:</div>
-                        1.7.2
+                        1.9
                     </div>
                 </nav>
             </div>
@@ -106,7 +102,7 @@
                             </div>
                             <div class="col-xl-3 col-md-6">
                                 <div class="card bg-danger text-white mb-4">
-                                    <div class="card-body">VIEW DB</div>
+                                    <div class="card-body">MANAGE DB</div>
                                     <div class="card-footer d-flex align-items-center justify-content-between">
                                         <a class="small text-white stretched-link" href="sqlquery">View Details</a>
                                         <div class="small text-white"><i class="fas fa-angle-right"></i></div>
@@ -127,18 +123,24 @@
                                         <input class="form-control" type="text" placeholder="Enter proxy type (http or socks)" aria-label="Search" aria-describedby="basic-addon2" name="type" />
                                     {% elif tool == "SQLi checker" %}
                                         <input class="form-control" type="text" placeholder="Enter limit (50 or 100)" aria-label="Search" aria-describedby="basic-addon2" name="limit" />
+                                    {% elif tool == "LFI checker" %}
+                                        <input class="form-control" type="text" placeholder="Enter limit (50 or 100)" aria-label="Search" aria-describedby="basic-addon2" name="limit" />
                                     {% elif tool == "Dorker" %}
                                         <input class="form-control" type="text" placeholder="Enter dorks (inurl:index.php, index.php or inurl:admin.php)" aria-label="Search" aria-describedby="basic-addon2" name="dorks" />
                                     {% elif tool == "Reverse IP lookup" %}
-                                        <input class="form-control" type="text" placeholder="Enter ip (192.168.0.1)" aria-label="Search" aria-describedby="basic-addon2" name="ip" />
+                                        <input class="form-control" type="text" placeholder="Enter IP (192.168.0.1)" aria-label="Search" aria-describedby="basic-addon2" name="ip" />
                                     {% elif tool == "Execute SQL query" %}
                                         <input class="form-control" type="text" placeholder="Enter query (SELECT * FROM dorker_urls)" aria-label="Search" aria-describedby="basic-addon2" name="query" />
                                     {% elif tool == "Directory bruteforce" %}
-                                        <input class="form-control" type="text" placeholder="Enter url (https://google.com/)" aria-label="Search" aria-describedby="basic-addon2" name="url" />
+                                        <input class="form-control" type="text" placeholder="Enter IP (192.168.0.1 or http://192.168.0.1) or site (google.com or https://google.com)" aria-label="Search" aria-describedby="basic-addon2" name="target" />
                                     {% elif tool == "Whois" %}
-                                        <input class="form-control" type="text" placeholder="Enter ip (192.168.0.1)" aria-label="Search" aria-describedby="basic-addon2" name="ip" />
+                                        <input class="form-control" type="text" placeholder="Enter IP (192.168.0.1)" aria-label="Search" aria-describedby="basic-addon2" name="ip" />
                                     {% elif tool == "Site technologies" %}
-                                        <input class="form-control" type="text" placeholder="Enter site (google.com or https://google.com)" aria-label="Search" aria-describedby="basic-addon2" name="site" />                                        
+                                        <input class="form-control" type="text" placeholder="Enter site (google.com or https://google.com)" aria-label="Search" aria-describedby="basic-addon2" name="site" />
+                                    {% elif tool == "Specific scan" %}
+                                        <input class="form-control" type="text" placeholder="Enter site (google.com or https://google.com)" aria-label="Search" aria-describedby="basic-addon2" name="site" />
+                                    {% elif tool == "Links scraper" %}
+                                        <input class="form-control" type="text" placeholder="Enter site (google.com or https://google.com)" aria-label="Search" aria-describedby="basic-addon2" name="site" />
                                     {% endif %}
                                 </div>
                                 </form>
@@ -147,7 +149,7 @@
                             <div class="card-body">
                                 <ul>
                                 	{% if tool == "Whois" %}
-								    	<li>{{ whoisdata | safe }}</li>
+								    	<li>{{ data | safe }}</li>
 								    {% elif tool == "Site technologies" %}
 								    	<li>{{ data | safe }}</li>
 								    {% else %}
