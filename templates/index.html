@@ -42,12 +42,13 @@
                                     <a class="nav-link" href="reverse_ip">Reverse IP lookup</a>
                                     <a class="nav-link" href="whois">Whois lookup</a>
                                     <a class="nav-link" href="dorker">Dorker</a>
-                                    <a class="nav-link" href="sqli">SQLi checker</a>
-                                    <a class="nav-link" href="lfi">LFI checker</a>
+                                    <a class="nav-link" href="sqli_lfi">SQLi and LFI checker</a>
+                                    <a class="nav-link" href="lfi_bruteforce">LFI bruteforce</a>
                                     <a class="nav-link" href="directory_bruteforce">Directory bruteforce</a>
                                     <a class="nav-link" href="cmsinfo">Site technologies</a>
                                     <a class="nav-link" href="links">Links scrapper</a>
                                     <a class="nav-link" href="specific_scan">Specific scan</a>
+                                    <a class="nav-link" href="myip">My IP</a>
                                 </nav>
                             </div>
                             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="false" aria-controls="collapsePages">
@@ -57,7 +58,7 @@
                             </a>
                             <div class="collapse" id="collapsePages" aria-labelledby="headingTwo" data-parent="#sidenavAccordion">
                                 <nav class="sb-sidenav-menu-nested nav accordion" id="sidenavAccordionPages">
-                                    <a class="nav-link" href="sqlquery">Execute SQL query</a>
+                                    <a class="nav-link" href="manage_db">Manage database</a>
                                 </nav>
                             </div>
                         </div>
@@ -84,18 +85,18 @@
                             </div>
                             <div class="col-xl-3 col-md-6">
                                 <div class="card bg-warning text-white mb-4">
-                                    <div class="card-body">SQLi CHECKER</div>
+                                    <div class="card-body">SQLi and LFI CHECKER</div>
                                     <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="sqli">View Details</a>
+                                        <a class="small text-white stretched-link" href="sqli_lfi">View Details</a>
                                         <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-xl-3 col-md-6">
                                 <div class="card bg-success text-white mb-4">
-                                    <div class="card-body">LFI CHECKER</div>
+                                    <div class="card-body">SPECIFIC SCAN</div>
                                     <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="lfi">View Details</a>
+                                        <a class="small text-white stretched-link" href="specific_scan">View Details</a>
                                         <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                                     </div>
                                 </div>
@@ -104,7 +105,7 @@
                                 <div class="card bg-danger text-white mb-4">
                                     <div class="card-body">MANAGE DB</div>
                                     <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="sqlquery">View Details</a>
+                                        <a class="small text-white stretched-link" href="manage_db">View Details</a>
                                         <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                                     </div>
                                 </div>
@@ -149,18 +150,15 @@
         </div>
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-        <!--<script src="js/scripts.js"></script>-->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
-        <!--<script src="assets/demo/chart-area-demo.js"></script>-->
-        <!--<script src="assets/demo/chart-bar-demo.js"></script>-->
         <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
         <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
-        <!--<script src="assets/demo/datatables-demo.js"></script>-->
     </body>
 </html>
 
 <style>
 ul, li {
+	padding-left: 0px;
     list-style:none;
     padding:0;
     margin:0;
