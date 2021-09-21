@@ -4,3 +4,5 @@ ipwhois
 json2html
 flask
 datetime
+urllib3[socks]
+pysocks
